@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8 />
+        <title>Indian Institute of science campus map</title>
+        <link rel='stylesheet' href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+        <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+        <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+        <style>
+		#header {
+			background-color: black;
+			color: white;
+			text-align: center;
+			padding: 5px;
+			}
+			#wrapper {
+			line-height: 30px;
+			background-color: #eeeeee;
+			height: 570px;
+			width: 150px;
+			float: right;
+			padding: 5px;
+			}
+			#dropdownbox
+			{
+			line-height: 20px;
+			background-color: #eeeeee;
+			height: 100px;
+			
+			width: 150px;
+			float: right;
+			padding: 5px;
+			
+			}
+			#nav {
+			line-height: 30px;
+			background-color: #eeeeee;
+			height: 470px;
+			width: 150px;
+			float: right;
+			padding: 5px;
+			}
+			/*#myDiv {
+			line-height: 20px;
+			background-color: #eeeeee;
+			height: 300px;
+			width: 120px;
+			float: right;
+			padding: 5px;
+			}*/
+			#map {
+			position: absolute;
+			top: 95px;
+			bottom: 0;
+			width: 88%;
+			height: 590px;
+			}
+			body {
+			margin: 0;
+			padding: 0;
+			}
+		</style>
+		<script>
+			var map;
+			var categories=[];
+			var isPresent=[];
+			var markers = [];
+			var markerTempArray;
+			var c = -1;
+			var xmlhttp;
+			var dropDownFeatureGr=null;
+				
+			function MapInit() {
+				map = L.map('map').setView([13.02, 77.567], 18);
+				var southWest = L.latLng(13.01537, 77.561576),
+				northEast = L.latLng(13.0241,77.57485),
+				bounds = L.latLngBounds(southWest, northEast);
+
+				map.fitBounds(bounds);
+				L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.png', 
+				{attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a> contributors | Tiles Courtesy of <a href="http://www.mapquest.com/" title="MapQuest" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png" width="16" height="16">', 
+				subdomains: ['otile1','otile2']}).addTo(map);
+				map.options.maxZoom = 25;map.options.minZoom = 15;
+				L.control.zoom();
+				
+				if (window.XMLHttpRequest)
+					xmlhttp=new XMLHttpRequest();
+				else
+					xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+				xmlhttp.responseType = "json";
+				xmlhttp.onreadystatechange = function() {
+					if(xmlhttp.readyState==4 && xmlhttp.status==200) {
+						var output = '';
+						for(var key in xmlhttp.response) {
+							categories[key] = xmlhttp.response[key]['name'];
+							isPresent[key] = 0;
+							output += categories[key] + ', ';
+							document.getElementById("nav").innerHTML+="<input type='checkbox' name='layer' id='"+categories[key]+"' value='"+categories[key]+"' onclick='fetchDataCheckBox(this)'>"+categories[key]+"<br>";
+							
+                          var dropdown = document.getElementById("drop");
+                            var opt = document.createElement("option"); 
+                            opt.text = categories[key];
+							opt.id=categories[key];
+                             opt.value = categories[key];
+                               dropdown.add(opt);
+							   document.getElementById("dropSub").disabled=true;
+						}
+					}
+				}
+				xmlhttp.open("GET","http://10.16.240.76:8081/project0/map",true);
+				xmlhttp.send();
+			}
+			function getFromCache(category)
+			{
+			  c = -1;
+				for(i = 0; i < categories.length; i++) {
+					if(categories[i] == category.value) {
+						c = i;
+						break;
+					}
+				}
+				return c;
+			}
+				
+				
+			function fetchDataCheckBox(category)
+			{
+				
+			
+		//	alert(category.value);
+				var c=getFromCache(category);
+				if(!document.getElementById(category.id).checked)
+					remove(c);
+				else
+				{
+					if(isPresent[c] == 0) {
+						markerTempArray = [];
+					//	document.getElementById("myDiv").innerHTML="checkbox clicked";
+
+						xmlhttp.onreadystatechange = function() {
+							if(xmlhttp.readyState==4 && xmlhttp.status==200) {
+								var output = '';
+								for(var key in xmlhttp.response) {
+									for(var prop in xmlhttp.response[key]) {
+										output += prop + ' : ' + xmlhttp.response[key][prop] ;
+									}
+									var ic=category.value+'.png';
+									var markerIcon=L.icon({
+												iconUrl: 'C:/Users/Arnab/Desktop/SE252JAN2015PROJ-0$Arnab sen/se252-jan15/project-0/src/main/java/se252/jan15/calvinandhobbes/project0/icons/'+  category.value + '.png' ,
+												iconRetinaUrl: 'cricket@2x.png',
+												iconSize: [20, 30],
+												iconAnchor: [22, 94],
+												popupAnchor: [-3, -76],
+												/*shadowUrl: 'my-icon-shadow.png',
+												shadowRetinaUrl: 'my-icon-shadow@2x.png',
+												shadowSize: [68, 95],*/
+												shadowAnchor: [22, 94]
+												});
+									//alert(ic);
+									var marker = new L.marker([xmlhttp.response[key]['latitude'],xmlhttp.response[key]['longitude']]/* ,{icon: markerIcon} */);
+									marker.bindPopup(xmlhttp.response[key]['name']+"- "+xmlhttp.response[key]['description']);
+									markerTempArray.push(marker);
+									output += '\n\n';
+								}
+								markers[c] = new L.featureGroup(markerTempArray);
+								isPresent[c]=1;
+								//document.getElementById("myDiv").innerHTML=output;
+							}
+							markers[c].addTo(map);
+						}
+						xmlhttp.open("GET","http://10.16.240.76:8081/project0/map?category="+category.value,true);
+						xmlhttp.send();
+					}
+					else {
+						markers[c].addTo(map);
+					}
+				}
+			}
+			
+			
+			
+			
+			function fetchDataDropDown(category)
+			{
+		//	alert(category.value);
+		var selectbox=document.getElementById("dropSub");
+		 for(i=selectbox.options.length-1;i>=1;i--)
+			{
+				selectbox.remove(i);
+			}
+	/*if(category.value.str.search("select")>=0)
+	{
+	alert(category.value.str.search("select"));
+	//document.getElementById("dropSub").disabled=true;
+	return;
+	 
+	}*/
+	var c=getFromCache(category);
+	var dropdown;
+			
+				
+					if(isPresent[c] == 0) {
+						markerTempArray = [];
+					//	document.getElementById("myDiv").innerHTML="checkbox clicked";
+
+						xmlhttp.onreadystatechange = function() {
+							if(xmlhttp.readyState==4 && xmlhttp.status==200) {
+								var output = '';
+								for(var key in xmlhttp.response) {
+									var marker = new L.marker([xmlhttp.response[key]['latitude'],xmlhttp.response[key]['longitude']]);
+									marker.bindPopup(xmlhttp.response[key]['name']+"- "+xmlhttp.response[key]['description']);
+									markerTempArray.push(marker);
+									//output += '\n\n';
+									   dropdown = document.getElementById("dropSub");
+                            var opt = document.createElement("option"); 
+                            opt.text = xmlhttp.response[key]['name'];
+							opt.id=xmlhttp.response[key]['name'];
+                             opt.value = xmlhttp.response[key]['name'];
+                               dropdown.add(opt);
+									
+								}
+								markers[c] = new L.featureGroup(markerTempArray);
+								isPresent[c]=1;
+								//document.getElementById("myDiv").innerHTML=output;
+							}
+							//markers[c].addTo(map);
+						}
+						xmlhttp.open("GET","http://10.16.240.76:8081/project0/map?category="+category.value,true);
+						xmlhttp.send();
+					}
+					else {
+			
+					var place=markers[c].getLayers();
+			
+					dropdown = document.getElementById("dropSub");
+					//for(i=0; i<place.length;i++)	
+					for(var i in place)
+					{
+					//alert("hello");
+					//alert(place[i]['name']);
+					var name=place[i].getPopup().getContent().split("-")[0];
+					var opt = document.createElement("option"); 
+                            opt.text = name;
+							opt.id=name;
+                             opt.value =name;
+                               dropdown.add(opt);
+				      	
+					}
+				}
+				document.getElementById("dropSub").disabled=false;
+			}
+			
+			function fetchMarker()
+			{ 
+				var e = document.getElementById("drop");
+				var category = e.options[e.selectedIndex];
+				e = document.getElementById("dropSub");
+				var place = e.options[e.selectedIndex];
+				
+				var c=getFromCache(category);
+				var markerArray=markers[c].getLayers();
+			    for(i=0;i<markerArray.length;i++)
+			    {
+						if(markerArray[i].getPopup().getContent().indexOf(place.value)!=-1)
+						{
+							/* L.marker(markersArray[i].['latitude'],['latitude']).addTo(map)
+                                .bindPopup(markersArray[i].['name']+': '+markersArray[i].['description'])
+                                .openPopup();*/
+								if(dropDownFeatureGr==null)
+								 dropDownFeatureGr=L.featureGroup(markerArray[i]);
+								dropDownFeatureGr.addLayer(markerArray[i]);
+								dropDownFeatureGr.addTo(map);
+							//markerArray[i].addTo(map);
+							
+								break;
+						}
+			    }
+						
+			}
+			
+	
+			function remove(c) {
+				map.removeLayer(markers[c]);
+			}
+			
+			
+			function resetAll()
+			{
+				
+				for(i = 0; i < markers.length; i++) {
+				if(markers[i]!=null)
+					markers[i].clearLayers();
+					isPresent[i] = 0;
+					document.getElementById(categories[i]).checked = false;
+					
+				}
+				if(dropDownFeatureGr!=null)
+				  dropDownFeatureGr.clearLayers();
+				document.getElementById("drop").selectedIndex=0;
+				document.getElementById("dropSub").selectedIndex=0;
+				document.getElementById("dropSub").disabled=true;
+			}
+		</script>
+	</head>
+	<body onload='MapInit()'>
+		<div id='header'>
+			<h1>
+			IISC campus map
+			<h1>
+		</div>
+		<div id='map'></div>
+		<div id='wrapper'>
+			<div id='nav'>
+			</div>
+			<div id='dropdownbox'>
+			<select id="drop" onchange='fetchDataDropDown(this)'>
+			<option id='_blank'>Select the category</option>
+			</select><br>
+			<select id ='dropSub' onchange='fetchMarker()' >
+			<option id='_blank'>Select the place</option>
+			</select><br>
+			<input type='button' value='Reset' onclick='resetAll()'><br>
+			</div>
+			
+		
+		</div>
+	</body>
+</html>
