@@ -1,0 +1,7 @@
+ID	Type	        Title					Team
+---	-------         ---------------------------------------	-------------------------
+1	App-aaS		IISc Campus Map using OpenStreetMaps	Arnab Sen, Chetan Mahajan
+2	PaaS		Edge+Cloud CEP Processing for IoT 	Niranjan Singh
+3	IaaS		USB Cloud Simulator for AWS		Diptaparna Biswas
+4	PaaS		Online Analytics/Viz on Storm+Hive	Vamshi, Anshu
+5	Analytics-aaS	Time-series graph algorithms using NELL	Varshitha, Ravikant
